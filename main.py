@@ -1561,13 +1561,10 @@ class HomePage(QMainWindow):
 								text="Loading bookings...")
 		loader.show_overlay()
 		QApplication.processEvents()
+		QTimer.singleShot(0, loader.hide_overlay)
 
 		def run_show_bookings():
-			try:
-				self.show_bookings(hotel_ID)
-			finally:
-				QTimer.singleShot(0, loader.hide_overlay)
-
+			self.show_bookings(hotel_ID)
 		QTimer.singleShot(0, run_show_bookings)
 
 	def get_filtered_hotels(self, page=2):
@@ -5356,7 +5353,10 @@ def excepthook(exc_type, exc_value, exc_tb):
 
 
 if __name__ == "__main__":
-	setup_database()
+	try:
+		setup_database()
+	except Exception as e:
+		print("Error", e)
 	sys.excepthook = excepthook
 	BookingDataManagement().schedule_monthly_cleanup()
 	app = QApplication(sys.argv)
