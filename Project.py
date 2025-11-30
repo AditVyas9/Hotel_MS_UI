@@ -1,24 +1,10 @@
-<html>
-<head><title>CS Project</title></head>
-<body>
-<h2 style="color:red;">Created by:</h2>
-<dt><ul>
-<li>ADITI VYAS (Leader)</li>
-<li>DHRUVI MODI</li>
-<li>RHEMA JONES</li>
-</ul></dt>
-Requirements - MySQL(host name,user name, password); pymysql; card.txt(uploaded at the EOP), spinner.gif,
-close.svg, hotel.png, hotel.svg, maximize.svg, restore.svg, close.svg, Eye_close.svg, Eye_open.svg,
-minimize.svg
-<h1 style="text-align: center;"> Python Code</h1>
-<pre>
 import pymysql as pql
 import time
 
 
-host_name = "your_host-name"
-user_name = "your_user-name"
-password = "your_password"
+host_name = "localhost"
+user_name = "root"
+password = "Adit@2011"
 database_name1 = 'user_details_database'
 database_name2 = 'hotels_details_database'
 
@@ -739,20 +725,3 @@ Good Bye!''')
 	else:
 		print('''
 Enter a valid command''')
-</pre>
-<h1 style="text-align: center;"> Card File</h1>
-<pre>
-card_no,holder_name,cvv,exp
-7649025810341275,JOHN SMITH,344,12/2030
-5291847602139841,ADITI VYAS,731,11/2039
-6805172390486652,ANGELINA JACOB,565,08/2040
-4123958706610429,ADIT VYAS,676,09/2045
-9034526172083346,SARTHAK SHARMA,787,10/2054
-2579401836745018,LAKSHYA SHARMA,887,04/2035
-8062719453204873,KRATI JAIN,998,11/2040
-4753086195427601,AKANSHA MUDGAL,873,12/2055
-</pre>
-</body>
-</html>
-
-
