@@ -1,3 +1,16 @@
+HOST = "localhost"
+USER = "root"
+PASSWORD = "Adit@2014"
+HOTEL_ICON_PATH = "Icons/Hotel.svg"
+SPINNER_PATH = "Icons/spinner.gif"
+EYE_CLOSE_PATH = "Icons/Eye_close.svg"
+EYE_OPEN_PATH = "Icons/Eye_open.svg"
+MAXIMIZE_PATH = "Icons/maximize.svg"
+MINIMIZE_PATH = "Icons/minimize.svg"
+RESTORE_PATH = "Icons/restore.svg"
+HOTEL_IMAGE_PATH = "Icons/hotel.png"
+CLOSE_PATH = "Icons/close.png"
+
 from PyQt6.QtGui import (
     QAction,
     QIcon,
@@ -82,9 +95,9 @@ from reportlab.lib.units import inch
 
 def create_connection():
     co = pymysql.connect(
-        host="localhost",
-        user="root",
-        password="Adit@2014",
+        host=HOST,
+        user=USER,
+        password=PASSWORD,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
     )
@@ -95,9 +108,9 @@ def create_connection():
     co.close()
 
     conn = pymysql.connect(
-        host="localhost",
-        user="root",
-        password="Adit@2014",
+        host=HOST,
+        user=USER,
+        password=PASSWORD,
         database="hotel_management",
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
@@ -241,7 +254,7 @@ class RoundedDialog(QDialog):
         header_layout.setSpacing(10)
 
         icon_label = QLabel()
-        icon_label.setPixmap(QIcon("Icons/Hotel.svg").pixmap(32, 32))
+        icon_label.setPixmap(QIcon(HOTEL_ICON_PATH).pixmap(32, 32))
         header_layout.addWidget(icon_label)
 
         title_label = QLabel("About Hotel Management System")
@@ -880,14 +893,14 @@ class HomePage(QMainWindow):
         self._is_maximized = False
         self._is_switching = False
         self._normal_geometry = self.geometry()
-        self.loader = LoadingOverlay(self, gif_path="Icons/spinner.gif")
+        self.loader = LoadingOverlay(self, gif_path=SPINNER_PATH)
         self._table_cache = {"management": None, "booking": None}
         self._last_update_time = None
         self.booking_manager = BookingDataManagement()
         self._drag_pos = QPoint()
 
         self.threadpool = QThreadPool()
-        self.setWindowIcon(QIcon("Icons/Hotel.svg"))
+        self.setWindowIcon(QIcon(HOTEL_ICON_PATH))
 
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.resize(800, 600)
@@ -918,7 +931,7 @@ class HomePage(QMainWindow):
         title_layout.setContentsMargins(10, 0, 10, 0)
 
         self.icon_label = QLabel()
-        self.icon_label.setPixmap(QIcon("Icons/Hotel.svg").pixmap(28, 28))
+        self.icon_label.setPixmap(QIcon(HOTEL_ICON_PATH).pixmap(28, 28))
         self.icon_label.setFixedSize(28, 28)
         title_layout.insertWidget(0, self.icon_label)
         if self.next_page:
@@ -937,7 +950,7 @@ class HomePage(QMainWindow):
         self.btn_close = QPushButton()
         for btn, icon in zip(
             (self.btn_min, self.btn_max, self.btn_close),
-            ("Icons/minimize.svg", "Icons/maximize.svg", "Icons/close.svg"),
+            (MINIMIZE_PATH, MAXIMIZE_PATH, "Icons/close.svg"),
         ):
             btn.setFixedSize(36, 36)
             btn.setIcon(QIcon(icon))
@@ -1398,12 +1411,17 @@ class HomePage(QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.drag_pos = event.globalPosition().toPoint()
+            self._drag_pos = event.globalPosition().toPoint()
+            event.accept()
 
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.MouseButton.LeftButton and not self._is_maximized:
-            self.move(self.pos() + (event.globalPosition().toPoint() - self._drag_pos))
-            self._drag_pos = event.globalPosition().toPoint()
+            if self._drag_pos is not None:
+                self.move(
+                    self.pos() + (event.globalPosition().toPoint() - self._drag_pos)
+                )
+                self._drag_pos = event.globalPosition().toPoint()
+            event.accept()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F4 and (
@@ -1426,7 +1444,7 @@ class HomePage(QMainWindow):
 
     def _on_window_state_changed(self):
         if self._is_maximized:
-            self.btn_max.setIcon(QIcon("Icons/restore.svg"))
+            self.btn_max.setIcon(QIcon(RESTORE_PATH))
             self.title_bar.setStyleSheet(
                 """
 				background-color: #2E86C1;
@@ -1435,7 +1453,7 @@ class HomePage(QMainWindow):
 			"""
             )
         else:
-            self.btn_max.setIcon(QIcon("Icons/maximize.svg"))
+            self.btn_max.setIcon(QIcon(MAXIMIZE_PATH))
             self.title_bar.setStyleSheet(
                 """
 				background-color: #2E86C1;
@@ -1447,7 +1465,7 @@ class HomePage(QMainWindow):
         self.update()
 
     def home_action(self):
-        loader = LoadingOverlay(self, gif_path="Icons/spinner.gif", text="Loading...")
+        loader = LoadingOverlay(self, gif_path=SPINNER_PATH, text="Loading...")
         loader.show_overlay()
         if hasattr(self, "button_group"):
             self.button_group.setExclusive(False)
@@ -1485,9 +1503,9 @@ class HomePage(QMainWindow):
     def start_db_thread(self):
         self._db_thread = QThread()
         self._db_worker = DatabaseMonitor(
-            host="localhost",
-            user="root",
-            password="Adit@2014",
+            host=HOST,
+            user=USER,
+            password=PASSWORD,
             database="hotel_management",
             interval=10,
         )
@@ -1666,7 +1684,7 @@ class HomePage(QMainWindow):
 				border-top-right-radius: 12px;
 			"""
             )
-            self.btn_max.setIcon(QIcon("Icons/maximize.svg"))
+            self.btn_max.setIcon(QIcon(MAXIMIZE_PATH))
 
             shadow = self.pages_widget.graphicsEffect()
             if isinstance(shadow, QGraphicsDropShadowEffect):
@@ -1691,7 +1709,7 @@ class HomePage(QMainWindow):
 				border-top-right-radius: 0px;
 			"""
             )
-            self.btn_max.setIcon(QIcon("Icons/restore.svg"))
+            self.btn_max.setIcon(QIcon(RESTORE_PATH))
             self._is_maximized = True
 
         self.update()
@@ -1728,9 +1746,7 @@ class HomePage(QMainWindow):
             MessageBoxManager.warning(self, "Login Failed", "Incorrect credentials!")
             return
 
-        loader = LoadingOverlay(
-            self, gif_path="Icons/spinner.gif", text="Loading bookings..."
-        )
+        loader = LoadingOverlay(self, gif_path=SPINNER_PATH, text="Loading bookings...")
         loader.show_overlay()
         QApplication.processEvents()
         QTimer.singleShot(0, loader.hide_overlay)
@@ -1813,7 +1829,7 @@ class HomePage(QMainWindow):
         hotel_id = int(hotel_id_item.text())
 
         loader = LoadingOverlay(
-            self, gif_path="Icons/spinner.gif", text="Preparing Booking Form..."
+            self, gif_path=SPINNER_PATH, text="Preparing Booking Form..."
         )
         loader.show_overlay()
         QApplication.processEvents()
@@ -1940,9 +1956,7 @@ class HomePage(QMainWindow):
         self._is_switching = True
         self.submit_button.setEnabled(False)
 
-        self.loader = LoadingOverlay(
-            self, gif_path="Icons/spinner.gif", text="Loading..."
-        )
+        self.loader = LoadingOverlay(self, gif_path=SPINNER_PATH, text="Loading...")
         self.loader.show_overlay()
         QApplication.processEvents()
 
@@ -2055,7 +2069,7 @@ class HomePage(QMainWindow):
         )
 
         loader = LoadingOverlay(
-            self, gif_path="Icons/spinner.gif", text="Loading hotel data..."
+            self, gif_path=SPINNER_PATH, text="Loading hotel data..."
         )
         loader.show_overlay()
         QApplication.processEvents()
@@ -2101,7 +2115,7 @@ class HomePage(QMainWindow):
 
 
 class LoadingOverlay(QWidget):
-    def __init__(self, parent=None, gif_path="Icons/spinner.gif", text="Loading..."):
+    def __init__(self, parent=None, gif_path=SPINNER_PATH, text="Loading..."):
         super().__init__(parent)
         self.parent = parent
 
@@ -3377,7 +3391,7 @@ class PasswordLineEdit(QLineEdit):
 		"""
         )
         self.eye_button = QToolButton(self)
-        self.eye_button.setIcon(QIcon(r"Icons/Eye_open.svg"))
+        self.eye_button.setIcon(QIcon(EYE_OPEN_PATH))
         self.eye_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.eye_button.setStyleSheet("border: none;")
         self.eye_button.setFixedSize(20, 20)
@@ -3393,10 +3407,10 @@ class PasswordLineEdit(QLineEdit):
     def toggle_password(self):
         if self.echoMode() == QLineEdit.EchoMode.Password:
             self.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.eye_button.setIcon(QIcon(r"Icons/Eye_close.svg"))
+            self.eye_button.setIcon(QIcon(EYE_CLOSE_PATH))
         else:
             self.setEchoMode(QLineEdit.EchoMode.Password)
-            self.eye_button.setIcon(QIcon(r"Icons/Eye_open.svg"))
+            self.eye_button.setIcon(QIcon(EYE_OPEN_PATH))
 
     def keyPressEvent(self, event):
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
@@ -3886,7 +3900,7 @@ class BookInitialDialog(RoundedDialog):
             total_amount=total_amount,
             booking_id=booking_data["booking_id"],
             app_name="EasyStay",
-            app_logo_path="Icons/Hotel.png",
+            app_logo_path=HOTEL_IMAGE_PATH,
         )
         MessageBoxManager.info(
             self,
@@ -5507,7 +5521,7 @@ class BookingForm(RoundedDialog):
             total_amount=total_amount,
             booking_id=self.booking_id,
             app_name="EasyStay",
-            app_logo_path="Icons/Hotel.png",
+            app_logo_path=HOTEL_IMAGE_PATH,
         )
         MessageBoxManager.info(
             self,
