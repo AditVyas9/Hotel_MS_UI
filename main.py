@@ -6493,8 +6493,6 @@ class BookingInvoice:
         canvas.restoreState()
 
 
-def excepthook(exc_type, exc_value, exc_tb):
-    print("".join(traceback.format_exception(exc_type, exc_value, exc_tb)))
 
 
 if __name__ == "__main__":
@@ -6502,7 +6500,6 @@ if __name__ == "__main__":
         setup_database()
     except Exception as e:
         print("Error", e)
-    sys.excepthook = excepthook
     BookingDataManagement().schedule_monthly_cleanup()
     app = QApplication(sys.argv)
     window = HomePage()
