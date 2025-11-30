@@ -1,6 +1,6 @@
-HOST = sql_host
-USER = sql_user
-PASSWORD = sql_password
+HOST = "sql_host"
+USER = "sql_user"
+PASSWORD = "sql_password"
 HOTEL_ICON_PATH = "Icons/Hotel.svg"
 SPINNER_PATH = "Icons/spinner.gif"
 EYE_CLOSE_PATH = "Icons/Eye_close.svg"
