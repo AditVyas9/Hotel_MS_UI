@@ -6387,7 +6387,7 @@ class BookingInvoice:
             booking_table_data,
             colWidths=[140, 310],
         )
-
+        
         booking_table.setStyle(
             TableStyle(
                 [
