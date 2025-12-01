@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Project</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+
+
+
+<style>
+body{background:#101022;color:#eee;font-family:'Poppins',sans-serif;padding:40px;}
+h1{color:#9f7aea;text-align:center;margin-bottom:20px;margin-top: 5px;}
+.card-title{font-size:18px;color:#f6ad55;}
+details.code-collapse {
+    margin: 15px 0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px;
+    background: #1a1a2e;
+}
+
+details.code-collapse summary {
+    cursor: pointer;
+    font-size: 16px;
+    color: #f6ad55;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.download-zip-btn {
+    display: inline-block;
+    padding: 12px 22px;
+    background: linear-gradient(135deg, #2E86C1, #4da6ff);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 18px rgba(46, 134, 193, 0.45);
+    transition: all 0.25s ease;
+}
+
+.download-zip-btn:hover {
+    background: linear-gradient(135deg, #4da6ff, #2E86C1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(77, 166, 255, 0.6);
+}
+
+.download-zip-btn:active {
+    transform: scale(0.97);
+}
+</style>
+</head>
+<body>
+<h1>CS Project</h1>
+<h2 style="
+    color: #f6ad55;
+    font-size: 24px;
+    font-weight: 650;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0.5px;
+    border-left: 4px solid #9f7aea;
+    padding-left: 12px;
+">
+    Hotel Management System (HMS)
+</h2>
+
+<h3 style="
+    color: #9ca3af; /* Softer grey for subtlety */
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 5px;
+    font-family: 'Poppins', sans-serif;
+">
+    Contains both:
+    <span style="color:#9f7aea; font-weight:600;">Management Portal</span>
+    &nbsp;and&nbsp;
+    <span style="color:#9f7aea; font-weight:600;">Booking Portal</span>
+</h3>
+
+
+<div style="
+    background: #1a1a2e;
+    border: 1px solid #444;
+    color: #00ff88;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    margin: 20px 0;
+">
+<kbd>pip install pymysql reportlab PyQt6 cryptography schedule reportlab</kbd>
+</div>
+
+<div class="cards">
+<article class="card" data-title="main.py">
+<header class="card-header"><div class="card-title">main.py</div></header>
+<details class="code-collapse">
+<summary>Show / Hide main.py</summary>
+<pre class="line-numbers language-python"><code id="code-display"></code></pre>
+</details>
+<script>
+fetch("https://raw.githubusercontent.com/AditVyas9/Hotel_MS_UI/master/main.py")
+    .then(response => response.text())
+    .then(code => {
+        document.getElementById("code-display").textContent = code;
+        Prism.highlightAll();
+    })
+    .catch(error => console.error("Error loading code:", error));
+</script>
+</article>
+<article class="card" data-title="card.txt">
+    <header class="card-header">
+        <div class="card-title">card.txt</div>
+    </header>
+
+    <div class="card-body">
+        <details class="code-collapse">
+            <summary>Show / Hide card.txt</summary>
+            <pre class="line-numbers language-python"><code id="card-display"></code></pre>
+        </details>
+    </div>
+</article>
+
+<script>
+fetch("https://raw.githubusercontent.com/AditVyas9/Hotel_MS_UI/master/card.txt")
+    .then(response => response.text())
+    .then(code => {
+        document.getElementById("card-display").textContent = code.trim(); // Trim to fix indentation
+        Prism.highlightAll();
+    })
+    .catch(error => console.error("Error loading code:", error));
+</script>
+
+</div>
+<a href="https://raw.githubusercontent.com/AditVyas9/Hotel_MS_UI/master/Icons.zip" 
+   download 
+   class="download-zip-btn">
+    ⬇ Download Icons.zip
+</a>
+<br><br>
+<div class="info-box">
+    <b>Note:</b> After downloading, extract the ZIP into:<br>
+    <code>&lt;project-folder&gt;/Icons/</code><br>
+    This is required for the project to run correctly.
+</div>
+<section style="
+    margin-top: 25px;
+    padding: 18px 22px;
+    background: #1a1a2e;
+    border: 1px solid #444;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+">
+    <h2 style="
+        color: #9f7aea;
+        font-size: 20px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+    ">
+        Created By:
+    </h2>
+    <ul style="
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        font-size: 16px;
+    ">
+        <li style="color:#f6ad55; margin-bottom: 6px;">
+            <span style="color:#eee;">&#9679; </span> <b>Aditi Vyas</b> (Leader)
+        </li>
+        <li style="color:#f6ad55; margin-bottom: 6px;">
+            <span style="color:#eee;">&#9679; </span> Dhruvi Modi
+        </li>
+        <li style="color:#f6ad55;">
+            <span style="color:#eee;">&#9679; </span> Rhema Jones
+        </li>
+    </ul>
+</section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>
