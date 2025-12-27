@@ -1,6 +1,6 @@
-HOST = "sql_host"
-USER = "sql_user"
-PASSWORD = "sql_password"
+HOST = "localhost"
+USER = "root"
+PASSWORD = "Adit@2014"
 HOTEL_ICON_PATH = "Icons/Hotel.svg"
 SPINNER_PATH = "Icons/spinner.gif"
 EYE_CLOSE_PATH = "Icons/Eye_close.svg"
@@ -895,7 +895,6 @@ class HomePage(QMainWindow):
         )
 
         self._is_maximized = False
-        self._is_switching = False
         self._normal_geometry = self.geometry()
         self.loader = LoadingOverlay(self, gif_path=SPINNER_PATH)
         self._table_cache = {"management": None, "booking": None}
@@ -1304,7 +1303,6 @@ class HomePage(QMainWindow):
             menu.menuAction().setVisible(False)
 
         self.toggle_action = QAction(f"Go to {self.next_page}", self)
-        self.toggle_action.setShortcut("Alt+P")
         self.home = QAction(f"Home Page", self)
         self.home.setShortcut("Alt+Home")
         self.toggle_menu_item.addActions((self.toggle_action, self.home))
@@ -1955,9 +1953,6 @@ class HomePage(QMainWindow):
         self.threadpool.start(loader)
 
     def start_page_change(self):
-        if self._is_switching:
-            return
-        self._is_switching = True
         self.submit_button.setEnabled(False)
 
         self.loader = LoadingOverlay(self, gif_path=SPINNER_PATH, text="Loading...")
@@ -2053,7 +2048,6 @@ class HomePage(QMainWindow):
         else:
             table = self.table
             loader_fn = lambda: self.refresh_hotel_table(background=True, table=0)
-        self._is_switching = False
         table.setUpdatesEnabled(False)
         loader_fn()
         table.setUpdatesEnabled(True)
@@ -6387,7 +6381,7 @@ class BookingInvoice:
             booking_table_data,
             colWidths=[140, 310],
         )
-        
+
         booking_table.setStyle(
             TableStyle(
                 [

@@ -1,81 +1,158 @@
-# 🏨 Hotel Management System
+# 🏨 EasyStay — Hotel Management System
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyQt6](https://img.shields.io/badge/UI-PyQt6-green.svg)](https://pypi.org/project/PyQt6/)
-[![MySQL](https://img.shields.io/badge/Database-MySQL-orange.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Build-Stable-success.svg)]()
+<p align="center">
+  <b>A modern, elegant, and scalable desktop solution for hotel booking & management</b>
+</p>
 
-A powerful and modern **Hotel Management System** built using **PyQt6** and **MySQL**.  
-It provides two main portals — **Booking Portal** for guests and **Management Portal** for administrators/staff — with a clean UI, animated interactions, and robust database operations.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue" />
+  <img src="https://img.shields.io/badge/UI-PyQt6-green" />
+  <img src="https://img.shields.io/badge/Database-MySQL-orange" />
+  <img src="https://img.shields.io/badge/Status-Stable-success" />
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" />
+</p>
+
+---
+
+## ✨ Why EasyStay?
+
+**EasyStay** is a thoughtfully designed **Hotel Management System** that focuses on **simplicity, performance, and future scalability**.
+Built with **PyQt6** and **MySQL**, it offers a polished desktop experience while laying the foundation for analytics-driven and cloud-ready expansion.
 
 ---
 
 ## 🧭 Table of Contents
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Technology Stack](#technology-stack)
-4. [Requirements](#requirements)
-5. [Project Structure](#project-structure)
-6. [Setup & Installation](#setup--installation)
-7. [How to Run](#how-to-run)
-8. [Screenshots](#screenshots)
-9. [Future Enhancements](#future-enhancements)
-10. [Author](#author)
-11. [License](#license)
+
+* Overview
+* Core Features
+* Technology Stack
+* Roadmap & Future Vision
+* Current Limitations
+* Author
+* License
 
 ---
 
 ## 🧾 Overview
 
-This Hotel Management System enables seamless **room booking**, **guest management**, and **hotel administration** from a single interface.
+EasyStay enables hotels to manage:
 
-- The **Booking Portal** simplifies guest bookings and payment handling.  
-- The **Management Portal** offers comprehensive tools for staff to manage bookings, customers, and reports.  
-- The system generates **PDF invoices** for every booking and allows **search & filter operations** for quick data access.
+* 🛏️ Room bookings
+* 👥 Guest details
+* 🧾 Invoices
+* 🏨 Administrative operations
 
-It’s a complete end-to-end desktop solution for medium and small hotels.
+All through a **single, modern desktop interface** with smooth animations, intelligent workflows, and real-time validation.
+
+Designed for **small to medium hotels**, EasyStay prioritizes usability today while planning for enterprise features tomorrow.
 
 ---
 
-## 🌟 Features
+## 🌟 Core Features
 
-### 🏠 Booking Portal
-- User-friendly room booking system.
-- Real-time room availability check.
-- Guest detail entry and stay duration tracking.
-- Instant **PDF invoice generation** upon booking confirmation.
-- Smooth loading animations using `spinner.gif`.
+### 🏠 Booking Portal (Guest-Facing)
 
-### 🛠️ Management Portal
-- Secure admin login with password toggle (`Eye_open.svg`, `Eye_close.svg`).
-- Add, update, and delete room and booking records.
-- **Search and filter** functions for rooms, customers, and bookings.
-- Manage check-ins, check-outs, and cancellations.
-- Status indicators for database connectivity.
-- Window control icons for custom frameless design (`maximize.svg`, `minimize.svg`, `restore.svg`, `close.svg`).
+* Intuitive room booking flow
+* Real-time room availability
+* Date-based booking validation
+* Automatic **PDF invoice generation**
+* Clean UI with loading animations
+
+### 🛠️ Management Portal (Admin/Staff)
+
+* Secure login with password visibility toggle
+* Add, edit, and manage hotels & rooms
+* Booking search, filtering, and cancellation
+* Check-in / Check-out management
+* Live **database & internet status indicators**
+* Custom frameless window with native OS controls
 
 ---
 
 ## 🧰 Technology Stack
 
-| Component | Technology |
-|------------|-------------|
-| **Programming Language** | Python 3.10+ |
-| **UI Framework** | PyQt6 |
-| **Database** | MySQL |
-| **Database Connector** | PyMySQL |
-| **Scheduler** | schedule |
-| **UI Assets** | SVG, PNG, GIF |
-| **Invoice Generation** | ReportLab or FPDF (PDF creation library) |
+| Layer        | Technology        |
+| ------------ | ----------------- |
+| Language     | Python 3.10+      |
+| UI Framework | PyQt6             |
+| Database     | MySQL             |
+| DB Connector | PyMySQL           |
+| PDF Engine   | ReportLab         |
+| Architecture | Modular, Threaded |
 
 ---
 
-## 📋 Requirements
+## 🚀 Roadmap & Future Vision
 
-### 📦 Python Packages
+EasyStay is built with growth in mind. The following upgrades are planned:
 
-Install all dependencies with:
+### 📈 Room Trend Intelligence
 
-```bash
-pip install PyQt6 pymysql schedule reportlab
+* Daily / weekly / seasonal occupancy trends
+* Most-booked room type analysis
+* Visual dashboards and charts
+
+### 📊 Market Mood & Demand Analysis
+
+* Identify peak & off-peak booking windows
+* Demand-driven pricing insights
+* Revenue forecasting using historical data
+
+### 🌐 Universal Server Architecture
+
+* Transition from local DB to centralized server
+* Multi-branch hotel support
+* Cloud deployment readiness (AWS / Azure)
+
+### 🔐 Enterprise-Grade Security
+
+* Strong password hashing (bcrypt / argon2)
+* Role-based access control (Admin / Staff)
+* Encrypted credentials & environment configs
+* Activity logs and audit trails
+
+### 📱 Platform Expansion
+
+* Web-based management dashboard
+* Mobile app for staff
+* Guest self-service booking portal
+
+---
+
+## ⚠️ Current Limitations (By Design)
+
+These limitations are intentional in the current version and are addressed in the roadmap:
+
+* 🗄️ **Local Database Only**
+  Runs on a locally hosted MySQL instance
+
+* 🔄 **No Real-Time Sync**
+  Multi-device synchronization not yet supported
+
+* 📊 **Basic Analytics**
+  No advanced charts or predictive insights
+
+* 💻 **Desktop-Only Application**
+  No web or mobile client yet
+
+* 🔐 **Foundational Security**
+  Functional authentication, not enterprise-grade
+
+---
+
+## 👤 Author
+
+**Adit Vyas**
+Developer | Designer | System Architect
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+<p align="center">
+  ⭐ If you like this project, consider giving it a star!
+</p>
