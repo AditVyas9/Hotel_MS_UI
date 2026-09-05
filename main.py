@@ -1,15 +1,56 @@
-HOST = "sql_host"
-USER = "user"
-PASSWORD = "sql_password"
-HOTEL_ICON_PATH = "Icons/Hotel.svg"
-SPINNER_PATH = "Icons/spinner.gif"
-EYE_CLOSE_PATH = "Icons/Eye_close.svg"
-EYE_OPEN_PATH = "Icons/Eye_open.svg"
-MAXIMIZE_PATH = "Icons/maximize.svg"
-MINIMIZE_PATH = "Icons/minimize.svg"
-RESTORE_PATH = "Icons/restore.svg"
-HOTEL_IMAGE_PATH = "Icons/hotel.png"
-CLOSE_PATH = "Icons/close.png"
+"""EasyStay desktop application.
+
+The UI deliberately remains in one module for now, but shared configuration and
+database helpers live at the top so every dialog uses the same safe defaults.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+import ctypes
+import os
+import sys
+import threading
+import time
+import socket
+import json
+import re
+import ast
+import hashlib
+import pathlib
+from datetime import datetime
+from collections import defaultdict
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def asset_path(*parts: str) -> str:
+    """Return an absolute, platform-independent path to a bundled asset."""
+    return str(BASE_DIR.joinpath(*parts))
+
+
+@dataclass(frozen=True)
+class DatabaseConfig:
+    host: str = os.getenv("HOTEL_DB_HOST", "sql_host")
+    user: str = os.getenv("HOTEL_DB_USER", "user")
+    password: str = os.getenv("HOTEL_DB_PASSWORD", "sql_password")
+    database: str = os.getenv("HOTEL_DB_NAME", "hotel_management")
+
+
+DATABASE_CONFIG = DatabaseConfig()
+HOST = DATABASE_CONFIG.host
+USER = DATABASE_CONFIG.user
+PASSWORD = DATABASE_CONFIG.password
+HOTEL_ICON_PATH = asset_path("Icons", "Hotel.svg")
+SPINNER_PATH = asset_path("Icons", "spinner.gif")
+EYE_CLOSE_PATH = asset_path("Icons", "Eye_close.svg")
+EYE_OPEN_PATH = asset_path("Icons", "Eye_open.svg")
+MAXIMIZE_PATH = asset_path("Icons", "maximize.svg")
+MINIMIZE_PATH = asset_path("Icons", "minimize.svg")
+RESTORE_PATH = asset_path("Icons", "restore.svg")
+HOTEL_IMAGE_PATH = asset_path("Icons", "Hotel.png")
+CLOSE_PATH = asset_path("Icons", "close.svg")
+APP_FONT = "Segoe UI" if sys.platform.startswith("win") else "Arial"
 
 try:
     from pymysql.err import IntegrityError
@@ -77,9 +118,8 @@ try:
         QPoint,
         QEvent,
     )
-    import time, pymysql, sys, json, re, ast, pathlib, socket, ctypes.wintypes, threading, schedule
-    from collections import defaultdict
-    from datetime import datetime
+    import pymysql
+    import schedule
     from PyQt6 import sip
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -94,93 +134,135 @@ try:
     )
     from reportlab.lib.units import inch
 except ModuleNotFoundError as e:
-    print("Module not found", e.name)
+    raise RuntimeError(
+        f"EasyStay requires the '{e.name}' package. Install the project dependencies first."
+    ) from e
 
 
-def create_connection():
-    co = pymysql.connect(
-        host=HOST,
-        user=USER,
-        password=PASSWORD,
+def create_connection(database: str | None = DATABASE_CONFIG.database):
+    """Create a configured MySQL connection.
+
+	Passing ``None`` connects to the server without selecting a database; this
+	is only needed while creating the application's database.
+	"""
+    options = dict(
+        host=DATABASE_CONFIG.host,
+        user=DATABASE_CONFIG.user,
+        password=DATABASE_CONFIG.password,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
+        connect_timeout=5,
     )
-
-    with co.cursor() as cu:
-        cu.execute("CREATE DATABASE IF NOT EXISTS hotel_management")
-    co.commit()
-    co.close()
-
-    conn = pymysql.connect(
-        host=HOST,
-        user=USER,
-        password=PASSWORD,
-        database="hotel_management",
-        charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    return conn
+    if database:
+        options["database"] = database
+    return pymysql.connect(**options)
 
 
 def setup_database():
+    """Create the EasyStay database, tables, and indexes if needed."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", DATABASE_CONFIG.database):
+        raise ValueError("HOTEL_DB_NAME must contain only letters, numbers, and underscores.")
+
+    co = create_connection(database=None)
+    try:
+        with co.cursor() as cu:
+            cu.execute(f"CREATE DATABASE IF NOT EXISTS `{DATABASE_CONFIG.database}`")
+        co.commit()
+    finally:
+        co.close()
+
     conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-	CREATE TABLE IF NOT EXISTS hotel_details (
-		hotel_id INT AUTO_INCREMENT PRIMARY KEY,
-		hotel_name VARCHAR(50),
-		place VARCHAR(100),
-		pin_code INT,
-		contact_hotel VARCHAR(50),
-		username VARCHAR(50) UNIQUE,
-		password VARCHAR(255),
-		floor INT,
-		room INT,
-		room_no LONGTEXT,
-		check_in TIME,
-		check_out TIME
-	)
-	"""
-    )
-    cursor.execute(
-        """
-		CREATE TABLE IF NOT EXISTS room_types (
-			id INT AUTO_INCREMENT PRIMARY KEY,
-			hotel_id INT,
-			room_type VARCHAR(30),
-			total INT,
-			room_no LONGTEXT,
-			price FLOAT,
-			FOREIGN KEY (hotel_id) REFERENCES hotel_details(hotel_id) ON DELETE CASCADE
-		)
-		"""
-    )
-    cursor.execute(
-        """
-			CREATE TABLE IF NOT EXISTS hotel_bookings (
-			id INT AUTO_INCREMENT PRIMARY KEY,
-			booking_id VARCHAR(15) NOT NULL UNIQUE,
-			hotel_id INT NOT NULL,
-			name VARCHAR(255) NOT NULL,
-			room_no TEXT NOT NULL,
-			room_type_id TEXT NOT NULL,
-			date_from DATE NOT NULL,
-			date_to DATE NOT NULL,
-			phone VARCHAR(20),
-			aadhar VARCHAR(20),
-			age INT,
-			email VARCHAR(50),
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (hotel_id) REFERENCES hotel_details(hotel_id)
-		);
-	"""
-    )
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+ CREATE TABLE IF NOT EXISTS hotel_details (
+  hotel_id INT AUTO_INCREMENT PRIMARY KEY,
+  hotel_name VARCHAR(50),
+  place VARCHAR(100),
+  pin_code INT,
+  contact_hotel VARCHAR(50),
+  username VARCHAR(50) UNIQUE,
+  password VARCHAR(255),
+  floor INT,
+  room INT,
+  room_no LONGTEXT,
+  check_in TIME,
+  check_out TIME
+ )
+ """
+            )
+            cursor.execute(
+                """
+  CREATE TABLE IF NOT EXISTS room_types (
+   id INT AUTO_INCREMENT PRIMARY KEY,
+   hotel_id INT,
+   room_type VARCHAR(30),
+   total INT,
+   room_no LONGTEXT,
+   price FLOAT,
+   FOREIGN KEY (hotel_id) REFERENCES hotel_details(hotel_id) ON DELETE CASCADE
+  )
+  """
+            )
+            cursor.execute(
+                """
+   CREATE TABLE IF NOT EXISTS hotel_bookings (
+   id INT AUTO_INCREMENT PRIMARY KEY,
+   booking_id VARCHAR(15) NOT NULL UNIQUE,
+   hotel_id INT NOT NULL,
+   name VARCHAR(255) NOT NULL,
+   room_no TEXT NOT NULL,
+   room_type_id TEXT NOT NULL,
+   date_from DATE NOT NULL,
+   date_to DATE NOT NULL,
+   phone VARCHAR(20),
+   aadhar VARCHAR(20),
+   age INT,
+   email VARCHAR(50),
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (hotel_id) REFERENCES hotel_details(hotel_id)
+  );
+ """
+            )
+            cursor.execute(
+                """
+  CREATE TABLE IF NOT EXISTS logs (
+   log_id INT AUTO_INCREMENT PRIMARY KEY,
+   log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   action VARCHAR(50) NOT NULL,
+   message TEXT
+  )
+  """
+            )
+            cursor.execute(
+                """
+  CREATE TABLE IF NOT EXISTS user_accounts (
+   account_id INT AUTO_INCREMENT PRIMARY KEY,
+   full_name VARCHAR(100) NOT NULL,
+   username VARCHAR(50) NOT NULL UNIQUE,
+   password_hash CHAR(64) NOT NULL,
+   role VARCHAR(20) NOT NULL,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   INDEX idx_user_accounts_role (role)
+  )
+  """
+            )
+            cursor.execute(
+                "SHOW INDEX FROM hotel_bookings WHERE Key_name = %s",
+                ("idx_bookings_hotel_dates",),
+            )
+            if not cursor.fetchone():
+                cursor.execute(
+                    "CREATE INDEX idx_bookings_hotel_dates "
+                    "ON hotel_bookings (hotel_id, date_from, date_to)"
+                )
+            conn.commit()
+        finally:
+            cursor.close()
+    finally:
+        conn.close()
 
 
 class RoundedDialog(QDialog):
@@ -347,7 +429,7 @@ class HotelIDialog(RoundedDialog):
         self.bg_frame.setGraphicsEffect(shadow)
 
         self.title = QLabel("Enter Hotel ID")
-        self.title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.title.setFont(QFont(APP_FONT, 16, QFont.Weight.Bold))
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title.setStyleSheet("color: #2E86C1; margin-bottom: 15px;")
 
@@ -376,7 +458,7 @@ class HotelIDialog(RoundedDialog):
 
         self.hotel_id_input = QLineEdit()
         self.hotel_id_input.setPlaceholderText("Hotel ID")
-        self.hotel_id_input.setFont(QFont("Segoe UI", 12))
+        self.hotel_id_input.setFont(QFont(APP_FONT, 12))
         self.hotel_id_input.setStyleSheet(
             """
 			QLineEdit {
@@ -558,7 +640,7 @@ class BookingViewer(RoundedDialog):
         self.bg_frame.setGraphicsEffect(shadow)
         self.filter_input = QLineEdit()
         self.filter_input.setPlaceholderText("Type here to filter...")
-        self.filter_input.setFont(QFont("Segoe UI", 11))
+        self.filter_input.setFont(QFont(APP_FONT, 11))
         self.filter_input.setStyleSheet(
             """
 			QLineEdit {
@@ -577,7 +659,7 @@ class BookingViewer(RoundedDialog):
         self.filter_input.textChanged.connect(self.filter_bookings)
 
         filter_label = QLabel("Search by Customer Name or Booking ID:")
-        filter_label.setFont(QFont("Segoe UI", 11))
+        filter_label.setFont(QFont(APP_FONT, 11))
 
         filter_layout = QHBoxLayout()
         filter_layout.addWidget(filter_label)
@@ -835,7 +917,8 @@ class DatabaseMonitor(QObject):
         self.password = password
         self.database = database
         self.interval = interval * 1000
-        self.timer = QTimer()
+        # A parented timer follows this monitor when it moves to its QThread.
+        self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_connection)
         self._last_status = None
         self._running = True
@@ -846,7 +929,10 @@ class DatabaseMonitor(QObject):
 
     def stop(self):
         self._running = False
-        self.timer.stop()
+        # Window shutdown invokes this method from the UI thread. Qt only
+        # permits stopping a timer from the thread that owns it.
+        if QThread.currentThread() is self.thread():
+            self.timer.stop()
 
     def check_connection(self):
         if not self._running:
@@ -870,8 +956,8 @@ class DatabaseMonitor(QObject):
             self._last_status = status
 
 
-user32 = ctypes.windll.user32
-
+IS_WINDOWS = sys.platform.startswith("win")
+user32 = ctypes.windll.user32 if IS_WINDOWS else None
 SW_MINIMIZE = 6
 SW_RESTORE = 9
 GWL_STYLE = -16
@@ -881,7 +967,6 @@ SWP_NOMOVE = 0x0002
 SWP_NOSIZE = 0x0001
 SWP_NOZORDER = 0x0004
 SWP_FRAMECHANGED = 0x0020
-SW_MAXIMIZE = 3
 
 
 class HomePage(QMainWindow):
@@ -966,7 +1051,6 @@ class HomePage(QMainWindow):
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
-            title_layout.addWidget(btn)
         for btn in (self.btn_min, self.btn_max, self.btn_close):
             btn.setFixedSize(36, 36)
             btn.setStyleSheet(
@@ -1002,7 +1086,7 @@ class HomePage(QMainWindow):
 			QMenuBar {
 				background-color: #dfe7ff;
 				border-bottom: 2px solid #2E86C1;
-				font-family: 'Segoe UI', 'Arial';
+                font-family: Arial;
 				font-size: 14px;
 			}
 			QMenuBar::item {
@@ -1075,8 +1159,8 @@ class HomePage(QMainWindow):
 			QWidget { background-color: #ffffff; border-radius: 15px; border: 1px solid #ccc; }
 		"""
         )
-        self.radio1 = QRadioButton("Management Portal")
-        self.radio2 = QRadioButton("Booking Portal")
+        self.radio1 = QRadioButton("Customer")
+        self.radio2 = QRadioButton("Staff")
         for rb in (self.radio1, self.radio2):
             rb.setStyleSheet(
                 """
@@ -1087,7 +1171,7 @@ class HomePage(QMainWindow):
             )
             card_layout.addWidget(rb)
 
-        self.submit_button = QPushButton("Submit")
+        self.submit_button = QPushButton("Continue")
         self.submit_button.setEnabled(False)
         self.submit_button.setFixedWidth(180)
         self.submit_button.setStyleSheet(
@@ -1363,6 +1447,8 @@ class HomePage(QMainWindow):
         painter.fillPath(path, QColor("#f0f4ff"))
 
     def enable_os_shortcuts(self):
+        if not user32:
+            return
         try:
             hwnd = int(self.windowHandle().winId())
             style = user32.GetWindowLongW(hwnd, GWL_STYLE)
@@ -1383,6 +1469,8 @@ class HomePage(QMainWindow):
             MessageBoxManager.info(None, "OS shortcut enable failed:", e)
 
     def _apply_native_style(self):
+        if not user32:
+            raise RuntimeError("Native window styling is only available on Windows.")
         win = self.windowHandle()
         if not win:
             raise RuntimeError("Window handle not created yet")
@@ -1404,6 +1492,9 @@ class HomePage(QMainWindow):
         return hwnd
 
     def show_native_minimized(self):
+        if not user32:
+            self.showMinimized()
+            return
         try:
             hwnd = self._apply_native_style()
             user32.ShowWindow(hwnd, SW_MINIMIZE)
@@ -1508,7 +1599,7 @@ class HomePage(QMainWindow):
             host=HOST,
             user=USER,
             password=PASSWORD,
-            database="hotel_management",
+            database=DATABASE_CONFIG.database,
             interval=10,
         )
         self._db_worker.moveToThread(self._db_thread)
@@ -1669,12 +1760,9 @@ class HomePage(QMainWindow):
         )
 
     def toggle_max_restore(self):
-        hwnd = int(self.winId())
-        screen = QApplication.primaryScreen().availableGeometry()
-
         if self._is_maximized:
-
-            user32.ShowWindow(hwnd, SW_RESTORE)
+            if user32:
+                user32.ShowWindow(int(self.winId()), SW_RESTORE)
             self.setGeometry(self._normal_geometry)
             self.setMask(QRegion())
             self._is_maximized = False
@@ -1955,6 +2043,15 @@ class HomePage(QMainWindow):
     def start_page_change(self):
         self.submit_button.setEnabled(False)
 
+        role = "customer" if self.selected_option == "Customer" else "staff"
+        account_dialog = AccountDialog(role, self)
+        if account_dialog.exec() != QDialog.DialogCode.Accepted:
+            self.submit_button.setEnabled(True)
+            return
+
+        self.current_account = account_dialog.account
+        self.next_page = "Booking Portal" if role == "customer" else "Management Portal"
+
         self.loader = LoadingOverlay(self, gif_path=SPINNER_PATH, text="Loading...")
         self.loader.show_overlay()
         QApplication.processEvents()
@@ -1962,8 +2059,6 @@ class HomePage(QMainWindow):
         QTimer.singleShot(0, self.change_page)
 
     def change_page(self):
-        if self.pages_layout.currentIndex() == 0:
-            self.next_page = self.selected_option
         QApplication.processEvents()
 
         self.toggle_menu_item.menuAction().setVisible(True)
@@ -2013,7 +2108,7 @@ class HomePage(QMainWindow):
 
             if self._table_cache.get("booking"):
                 self.populate_table(
-                    self.table,
+                    self.table1,
                     self._table_cache["booking"],
                     ["hotel_id", "hotel_name", "place", "pin_code"],
                     action_name=None,
@@ -2026,7 +2121,7 @@ class HomePage(QMainWindow):
 
             if self._table_cache.get("management"):
                 self.populate_table(
-                    self.table1,
+                    self.table,
                     self._table_cache["management"],
                     ["hotel_id", "hotel_name", "pin_code", "place"],
                     action_name=None,
@@ -3437,6 +3532,135 @@ class PasswordLineEdit(QLineEdit):
         pass
 
 
+class AccountDialog(RoundedDialog):
+    """Sign in or register an app-level customer/staff account."""
+
+    def __init__(self, role: str, parent=None):
+        super().__init__(parent)
+        self.role = role
+        self.account = None
+        self._registering = False
+        self.setWindowTitle(f"{role.title()} account")
+        self.setFixedSize(390, 310)
+
+        container = QFrame()
+        container.setStyleSheet("QFrame { background: white; border-radius: 16px; }")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(26, 26, 26, 26)
+        layout.setSpacing(12)
+
+        self.title_label = QLabel()
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setFont(QFont(APP_FONT, 16, QFont.Weight.Bold))
+        self.title_label.setStyleSheet("color: #2E86C1;")
+        layout.addWidget(self.title_label)
+
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Full name")
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Username")
+        self.password_input = PasswordLineEdit()
+        self.password_input.setPlaceholderText("Password")
+        for field in (self.name_input, self.username_input, self.password_input):
+            field.setStyleSheet(self._field_style())
+            layout.addWidget(field)
+
+        self.submit_button = QPushButton()
+        self.submit_button.setStyleSheet(
+            "QPushButton { background: #2E86C1; color: white; border-radius: 7px; "
+            "padding: 8px; font-weight: bold; } QPushButton:hover { background: #21618C; }"
+        )
+        self.submit_button.clicked.connect(self.submit)
+        layout.addWidget(self.submit_button)
+
+        self.switch_button = QPushButton()
+        self.switch_button.setFlat(True)
+        self.switch_button.setStyleSheet("color: #2E86C1; text-decoration: underline;")
+        self.switch_button.clicked.connect(self.toggle_mode)
+        layout.addWidget(self.switch_button)
+
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(6, 6, 6, 6)
+        outer_layout.addWidget(container)
+        self.password_input.returnPressed.connect(self.submit)
+        self._refresh_mode()
+
+    @staticmethod
+    def _field_style():
+        return (
+            "QLineEdit { border: 1px solid #c0c0c0; border-radius: 7px; padding: 7px; }"
+            " QLineEdit:focus { border-color: #2E86C1; }"
+        )
+
+    def _refresh_mode(self):
+        action = "Create" if self._registering else "Sign in"
+        self.title_label.setText(f"{action} as {self.role.title()}")
+        self.name_input.setVisible(self._registering)
+        self.submit_button.setText(action)
+        self.switch_button.setText(
+            "Already have an account? Sign in"
+            if self._registering
+            else "New here? Create an account"
+        )
+
+    def toggle_mode(self):
+        self._registering = not self._registering
+        self._refresh_mode()
+
+    @staticmethod
+    def _password_hash(password: str) -> str:
+        return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+    def submit(self):
+        full_name = self.name_input.text().strip()
+        username = self.username_input.text().strip()
+        password = self.password_input.text()
+        if not username or not password or (self._registering and not full_name):
+            MessageBoxManager.warning(
+                self, "Missing details", "Complete all required account fields."
+            )
+            return
+
+        conn = cursor = None
+        try:
+            conn = create_connection()
+            cursor = conn.cursor()
+            if self._registering:
+                cursor.execute(
+                    "INSERT INTO user_accounts (full_name, username, password_hash, role) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (full_name, username, self._password_hash(password), self.role),
+                )
+                conn.commit()
+                self.account = {"username": username, "role": self.role}
+            else:
+                cursor.execute(
+                    "SELECT account_id, full_name, username, role FROM user_accounts "
+                    "WHERE username=%s AND password_hash=%s AND role=%s",
+                    (username, self._password_hash(password), self.role),
+                )
+                self.account = cursor.fetchone()
+                if not self.account:
+                    MessageBoxManager.error(
+                        self,
+                        "Sign in failed",
+                        "Incorrect credentials, or this account has a different role.",
+                    )
+                    return
+            self.accept()
+        except IntegrityError:
+            MessageBoxManager.warning(
+                self, "Username unavailable", "Choose a different username."
+            )
+        except Exception as error:
+            MessageBoxManager.error(self, "Account error", str(error))
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+
 class LoginDialog(RoundedDialog):
     def __init__(self, hotel_id, parent=None):
         super().__init__(parent)
@@ -3462,7 +3686,7 @@ class LoginDialog(RoundedDialog):
         top_layout.setContentsMargins(0, 0, 0, 0)
         top_layout.setSpacing(0)
         title = QLabel("Hotel Login")
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont(APP_FONT, 16, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(
             "color: #2E86C1; margin-bottom: 15px; border: none; background: transparent;"
@@ -3645,6 +3869,7 @@ class BookInitialDialog(RoundedDialog):
         super().__init__(parent)
         self.title = title_obj
         self.booking_manager = BookingDataManagement()
+        self._check_in_progress = False
         self.setWindowTitle(self.title)
         self.setFixedSize(370, 230)
         self.bg_frame = QFrame()
@@ -3665,7 +3890,7 @@ class BookInitialDialog(RoundedDialog):
         top_layout.setContentsMargins(0, 0, 0, 0)
         top_layout.setSpacing(0)
         title = QLabel(self.title)
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont(APP_FONT, 16, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(
             "color: #2E86C1; margin-bottom: 15px; border: none; background: transparent;"
@@ -3722,10 +3947,9 @@ class BookInitialDialog(RoundedDialog):
         self.ok_btn = self.button_box.addButton(
             btn_text, QDialogButtonBox.ButtonRole.AcceptRole
         )
-        self.reference.returnPressed.connect(self.ok_btn.click)
-
         if btn_text == "Check":
             self.button_box.accepted.connect(self.check)
+            self.reference.returnPressed.connect(self.check)
             self.ok_btn.setStyleSheet(
                 """
 						QPushButton {
@@ -3801,24 +4025,29 @@ class BookInitialDialog(RoundedDialog):
                 conn.close()
 
     def check(self):
-        conn = create_connection()
-        cu = conn.cursor()
-        cu.execute(
-            "SELECT 1 FROM hotel_bookings WHERE (name=%s OR booking_id=%s) AND date_to >= (CURDATE() - INTERVAL 1 DAY)",
-            (self.reference.text(), self.reference.text()),
-        )
-        result = cu.fetchall()
-        BookingDataManagement.log_action1(
-            "Accessed table 'hotel_bookings'", "Validated name or booking_id"
-        )
-        if result == ():
-            MessageBoxManager.info(None, "Error 404", "Booking Not Found")
-        else:
+        if self._check_in_progress:
+            return
+
+        self._check_in_progress = True
+        conn = cu = None
+        try:
+            reference = self.reference.text().strip()
+            conn = create_connection()
+            cu = conn.cursor()
             cu.execute(
-                "SELECT * FROM hotel_bookings WHERE name=%s OR booking_id=%s",
-                (self.reference.text(), self.reference.text()),
+                "SELECT * FROM hotel_bookings "
+                "WHERE (name=%s OR booking_id=%s) "
+                "AND date_to >= (CURDATE() - INTERVAL 1 DAY)",
+                (reference, reference),
             )
             booking_data = cu.fetchone()
+            BookingDataManagement.log_action1(
+                "Accessed table 'hotel_bookings'", "Validated name or booking_id"
+            )
+            if not booking_data:
+                MessageBoxManager.info(None, "Error 404", "Booking Not Found")
+                return
+
             BookingDataManagement().log_action(
                 action="Accessed customer details",
                 hotel_id=booking_data["hotel_id"],
@@ -3826,9 +4055,7 @@ class BookInitialDialog(RoundedDialog):
                 message="Accessed customer details for generating invoice",
             )
             days = (booking_data["date_to"] - booking_data["date_from"]).days
-            booked_rooms, total_amount = self.extract_booking_details(
-                booking_data, days
-            )
+            booked_rooms, total_amount = self.extract_booking_details(booking_data, days)
             self.show_success_dialog(
                 booked_rooms,
                 total_amount,
@@ -3841,8 +4068,12 @@ class BookInitialDialog(RoundedDialog):
                 booking_data,
             )
             self.close_popup()
-            cu.close()
-            conn.close()
+        finally:
+            if cu:
+                cu.close()
+            if conn:
+                conn.close()
+            self._check_in_progress = False
 
     @staticmethod
     def get_room_nos_by_booking_id(booking_id: str):
@@ -5812,7 +6043,7 @@ class BookingDataManagement:
                     room_type_ids.append(room_type_id)
 
             if not final_assigned_rooms:
-                MessageBoxManager.warning(self, "Error", "No rooms selected!")
+                MessageBoxManager.warning(None, "Error", "No rooms selected!")
                 return False
 
             cur.execute(
@@ -5848,8 +6079,8 @@ class BookingDataManagement:
         except Exception as e:
             if conn:
                 conn.rollback()
-            MessageBoxManager.warning(None, "Error", "No rooms selected!")
-            self.log_action("booking_error", hotel_id, None, f"{e}")
+            MessageBoxManager.warning(None, "Booking Error", str(e))
+            self.log_action("booking_error", locals().get("hotel_id"), None, str(e))
             return False
         finally:
             if cur:
@@ -5865,7 +6096,7 @@ class BookingDataManagement:
 
             cur.execute(
                 """
-				SELECT hotel_id, room_no, room_type, date_from, date_to
+				SELECT hotel_id, room_no, room_type_id, date_from, date_to
 				FROM hotel_bookings
 				WHERE booking_id=%s
 			""",
@@ -6516,13 +6747,27 @@ class BookingInvoice:
         canvas.restoreState()
 
 
-if __name__ == "__main__":
+def main() -> int:
+    """Initialize application services and start the Qt event loop."""
+    app = QApplication(sys.argv)
+    app.setApplicationName("EasyStay")
     try:
         setup_database()
-    except ModuleNotFoundError as e:
-        print("Module not found", e.name)
+    except Exception as error:
+        QMessageBox.critical(
+            None,
+            "Database Setup Failed",
+            "EasyStay could not initialize its database. Check the HOTEL_DB_HOST, "
+            "HOTEL_DB_USER, and HOTEL_DB_PASSWORD settings.\n\n"
+            f"Details: {error}",
+        )
+        return 1
+
     BookingDataManagement().schedule_monthly_cleanup()
-    app = QApplication(sys.argv)
     window = HomePage()
     window.show()
-    sys.exit(app.exec())
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
